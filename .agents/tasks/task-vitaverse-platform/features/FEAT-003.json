@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Implement Strava OAuth2 integration (connect/disconnect), fetch and display user activities, and build the fitness challenges system with auto-verification and QR code generation/scanning.",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "Create src/app/api/strava/connect/route.ts - GET endpoint that redirects to Strava OAuth authorization URL. Scopes: read,activity:read_all. Redirect URI: {NEXTAUTH_URL}/api/strava/callback. Include state parameter for CSRF protection.",
     "Create src/app/api/strava/callback/route.ts - GET endpoint. Exchanges authorization code for access token via Strava API. Stores access_token, refresh_token, expires_at, and athlete.id in user record. Redirects to /dashboard with success message.",
@@ -33,5 +33,5 @@
     "Run: cd /projects/sandbox/VItaVerse && npm run build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build succeeds with all 14 new files. All routes registered: 7 API routes (strava connect/callback/activities, challenges CRUD, challenges progress, challenges verify, verifications, verify token) and 5 pages (strava, challenges, challenges/create, verifications, verify/[token]). Used Suspense boundary for useSearchParams in Strava page (same pattern as FEAT-002). Next.js 16 dynamic route params require Promise-based destructuring (params: Promise<{id: string}>). QR codes generated client-side using dynamic import of 'qrcode' package."
 }
