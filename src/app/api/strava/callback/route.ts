@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { getUser, updateUser } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
@@ -30,12 +29,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Determine user email: try session first, fall back to state parameter
+  // Determine user email: try token first, fall back to state parameter
   let userEmail: string | undefined;
 
-  const session = await getServerSession(authOptions);
-  if (session?.user?.email) {
-    userEmail = session.user.email;
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (token?.email) {
+    userEmail = token.email as string;
   } else if (stateData.email) {
     // Session cookie was lost during cross-origin redirect from Strava.
     // Fall back to the email encoded in the state parameter (already CSRF-validated).

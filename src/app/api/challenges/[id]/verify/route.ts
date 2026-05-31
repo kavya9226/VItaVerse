@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { readDB, writeDB, getUser, Challenge, Verification } from "@/lib/db";
 import { getValidAccessToken } from "@/lib/strava";
 
@@ -14,14 +13,15 @@ interface StravaActivity {
 }
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const email = token.email as string;
   const { id } = await params;
   const challenges = readDB<Challenge>("challenges");
   const challenge = challenges.find((c) => c.id === id);
@@ -30,7 +30,7 @@ export async function POST(
     return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
   }
 
-  const user = getUser(session.user.email);
+  const user = getUser(email);
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -47,7 +47,7 @@ export async function POST(
     });
   }
 
-  const accessToken = await getValidAccessToken(session.user.email);
+  const accessToken = await getValidAccessToken(email);
   if (!accessToken) {
     return NextResponse.json(
       { error: "Connect Strava first to verify challenge" },

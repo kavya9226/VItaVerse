@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { readDB, writeDB, Challenge } from "@/lib/db";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+export async function GET(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -14,10 +13,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const email = token.email as string;
 
   try {
     const body = await request.json();
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       activityType,
       startDate,
       endDate,
-      createdBy: session.user.email,
+      createdBy: email,
       createdAt: new Date().toISOString(),
     };
 

@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+export async function GET(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.email) {
     return NextResponse.redirect(new URL("/login", process.env.NEXTAUTH_URL || "http://localhost:3000"));
   }
 
+  const email = token.email as string;
   const clientId = process.env.STRAVA_CLIENT_ID;
   const redirectUri = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/strava/callback`;
 
@@ -17,7 +17,7 @@ export async function GET() {
   // This allows the callback to identify the user even if the session cookie
   // is not available after the cross-origin redirect from Strava.
   const state = Buffer.from(
-    JSON.stringify({ csrf, email: session.user.email })
+    JSON.stringify({ csrf, email })
   ).toString("base64url");
 
   const params = new URLSearchParams({

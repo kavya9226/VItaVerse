@@ -1,21 +1,21 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { getUser } from "@/lib/db";
 import { getValidAccessToken } from "@/lib/strava";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+export async function GET(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = getUser(session.user.email);
+  const email = token.email as string;
+  const user = getUser(email);
   if (!user || !user.stravaAccessToken) {
     return NextResponse.json({ error: "Strava not connected" }, { status: 401 });
   }
 
-  const accessToken = await getValidAccessToken(session.user.email);
+  const accessToken = await getValidAccessToken(email);
   if (!accessToken) {
     return NextResponse.json({ error: "Failed to refresh Strava token" }, { status: 401 });
   }

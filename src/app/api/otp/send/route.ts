@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { getUser, updateUser } from "@/lib/db";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    if (!token?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const email = token.email as string;
     const { phone } = await request.json();
 
     if (!phone) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = getUser(session.user.email);
+    const user = getUser(email);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-    updateUser(session.user.email, {
+    updateUser(email, {
       otp,
       otpExpiry,
       otpPhone: phone,

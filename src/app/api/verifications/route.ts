@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { readDB, getUser, Challenge, Verification } from "@/lib/db";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+export async function GET(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = getUser(session.user.email);
+  const email = token.email as string;
+  const user = getUser(email);
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
