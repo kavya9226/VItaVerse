@@ -9,18 +9,30 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     email = body.email;
-    console.log("[Strava Connect] Received email:", email);
-  } catch (err) {
-    console.log("[Strava Connect] Failed to parse body:", err);
+  } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
   if (!email || !getUser(email)) {
-    console.log("[Strava Connect] User not found for email:", email);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const clientId = process.env.STRAVA_CLIENT_ID;
+  const clientSecret = process.env.STRAVA_CLIENT_SECRET;
+
+  // Surface a clear error if the Strava credentials are not configured.
+  // The most common cause is a missing .env.local or the dev server not
+  // being restarted after the env file was created/edited.
+  if (!clientId || !clientSecret) {
+    return NextResponse.json(
+      {
+        error:
+          "Strava is not configured. Set STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in .env.local and restart the dev server.",
+      },
+      { status: 500 }
+    );
+  }
+
   const redirectUri = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/strava/callback`;
 
   const csrf = crypto.randomUUID();
@@ -30,7 +42,7 @@ export async function POST(request: NextRequest) {
   ).toString("base64url");
 
   const params = new URLSearchParams({
-    client_id: clientId || "",
+    client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
     scope: "read,activity:read_all",

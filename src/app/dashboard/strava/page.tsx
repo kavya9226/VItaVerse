@@ -176,8 +176,6 @@ function StravaContent() {
           <button
             onClick={async () => {
               try {
-                console.log("[Strava] Session:", session);
-                console.log("[Strava] Email:", session?.user?.email);
                 const res = await fetch("/api/strava/connect", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -187,9 +185,10 @@ function StravaContent() {
                   const data = await res.json();
                   window.location.href = data.url;
                 } else {
-                  const errData = await res.json();
-                  console.log("[Strava] Error response:", errData);
-                  setError("Failed to initiate Strava connection");
+                  const errData = await res.json().catch(() => ({}));
+                  setError(
+                    errData.error || "Failed to initiate Strava connection"
+                  );
                 }
               } catch {
                 setError("Failed to initiate Strava connection");
