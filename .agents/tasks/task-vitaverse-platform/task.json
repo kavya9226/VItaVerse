@@ -1,0 +1,7 @@
+{
+  "task_id": "task-vitaverse-platform",
+  "task_description": "Build a full-stack fitness challenge verification platform called VitaVerse. Features: email/password auth, phone OTP verification, Strava OAuth integration for activity data, fitness challenges with auto-verification against Strava data, QR code generation for completed challenges, and a QR scanner/verification page that shows green (valid) or red (invalid).",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Build the authentication UI (sign up and login pages), phone OTP verification flow, and the user dashboard page showing profile/status info.",
+  "status": "pending",
+  "steps": [
+    "Create src/app/(auth)/login/page.tsx - Login page with email+password form. On submit, call signIn('credentials', {email, password}). Show error messages. Link to sign up page. Clean modern design with fitness theme (green/blue accents).",
+    "Create src/app/(auth)/signup/page.tsx - Sign up page with name, email, password, confirm password fields. On submit, POST to /api/auth/signup. On success, redirect to login. Validate passwords match client-side.",
+    "Create src/app/api/auth/signup/route.ts - POST endpoint that creates a new user. Hash password with bcryptjs. Store in users.json via db utility. Return error if email already exists. User object shape: {id, name, email, passwordHash, phone, phoneVerified, stravaConnected, stravaAccessToken, stravaRefreshToken, stravaAthleteId, createdAt}",
+    "Create src/app/(auth)/layout.tsx - A centered layout for auth pages with VitaVerse branding/logo at top",
+    "Create src/app/dashboard/page.tsx - Protected page (redirect to login if not authenticated). Show: user name, email, phone verification status (verified/not verified with link to verify), Strava connection status (connected/not connected with link to connect), list of active challenges with progress, list of earned verification QR codes. Use a card-based layout.",
+    "Create src/app/dashboard/layout.tsx - Dashboard layout with a top navigation bar showing VitaVerse logo, user name, and sign out button",
+    "Create src/app/dashboard/phone/page.tsx - Phone verification page. Step 1: form to enter phone number, submit sends POST to /api/otp/send. Step 2: form to enter 6-digit OTP code, submit sends POST to /api/otp/verify. Show success message when verified.",
+    "Create src/app/api/otp/send/route.ts - POST endpoint. Accepts {phone}. Generates random 6-digit OTP. Stores OTP in user record (with expiry timestamp, 5 min). Logs OTP to console (simulated SMS). Returns success.",
+    "Create src/app/api/otp/verify/route.ts - POST endpoint. Accepts {phone, otp}. Checks OTP matches and hasn't expired. If valid, sets user.phoneVerified=true, user.phone=phone. Returns success/failure.",
+    "Update src/app/page.tsx - Landing page with VitaVerse branding, brief description of the platform, and prominent Login/Sign Up buttons. If already logged in, redirect to dashboard.",
+    "Run npm run build to verify everything compiles"
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds",
+    "Login page renders at /login with email and password fields",
+    "Sign up page renders at /signup with registration form",
+    "Dashboard page at /dashboard shows user status cards",
+    "Phone verification flow at /dashboard/phone has two-step OTP process",
+    "API endpoints exist: POST /api/auth/signup, POST /api/otp/send, POST /api/otp/verify",
+    "OTP is logged to console when 'sent'"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/VItaVerse && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

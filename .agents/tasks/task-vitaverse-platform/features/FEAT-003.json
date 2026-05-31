@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement Strava OAuth2 integration (connect/disconnect), fetch and display user activities, and build the fitness challenges system with auto-verification and QR code generation/scanning.",
+  "status": "pending",
+  "steps": [
+    "Create src/app/api/strava/connect/route.ts - GET endpoint that redirects to Strava OAuth authorization URL. Scopes: read,activity:read_all. Redirect URI: {NEXTAUTH_URL}/api/strava/callback. Include state parameter for CSRF protection.",
+    "Create src/app/api/strava/callback/route.ts - GET endpoint. Exchanges authorization code for access token via Strava API. Stores access_token, refresh_token, expires_at, and athlete.id in user record. Redirects to /dashboard with success message.",
+    "Create src/app/api/strava/activities/route.ts - GET endpoint. Uses stored access token to fetch recent activities from Strava API (GET https://www.strava.com/api/v3/athlete/activities). Returns list of activities with: name, type, distance (in km), duration, date. Handle token refresh if expired.",
+    "Create src/app/dashboard/strava/page.tsx - Strava page showing: Connect button (if not connected), connection status, list of recent activities in a nice table/card format (activity name, type icon, distance in km, duration formatted, date).",
+    "Create src/app/dashboard/challenges/page.tsx - Challenges page. Shows list of active challenges with progress bars. Each challenge shows: title, target distance, current progress (from Strava activities), status (in progress/completed). If completed, shows 'Claim Verification' button.",
+    "Create src/app/api/challenges/route.ts - GET returns all challenges. POST creates a new challenge (admin). Challenge shape: {id, title, description, targetDistanceKm, activityType, startDate, endDate, createdBy}.",
+    "Create src/app/api/challenges/[id]/verify/route.ts - POST endpoint. Checks if user's Strava activities within the challenge date range meet the target distance. If yes, creates a verification record: {id, uniqueToken (uuid), challengeId, userId, completedAt, distanceAchieved, status: 'verified'}. Generates nothing - the QR code is generated client-side from the token.",
+    "Create src/app/api/challenges/[id]/progress/route.ts - GET endpoint. Calculates total distance from user's Strava activities that match the challenge activity type and date range. Returns {totalDistance, targetDistance, percentage, isComplete}.",
+    "Create src/app/dashboard/challenges/create/page.tsx - Form to create a new challenge: title, description, target distance (km), activity type (run/ride/walk), start date, end date. POST to /api/challenges.",
+    "Create src/app/api/verifications/route.ts - GET endpoint returns all verifications for the current user. Each includes the unique token for QR code generation.",
+    "Create src/app/dashboard/verifications/page.tsx - Page showing all earned verifications as QR code cards. Each card shows: challenge title, completion date, distance achieved, and a QR code image. QR code encodes URL: {NEXTAUTH_URL}/verify/{token}. Use the 'qrcode' package to generate QR as data URL.",
+    "Create src/app/verify/[token]/page.tsx - Public verification page (no auth required). Fetches verification status from /api/verify/[token]. If valid and verified: show large GREEN background with checkmark icon, challenge name, user name, completion date. If invalid: show RED background with X icon and 'Invalid or expired verification' message.",
+    "Create src/app/api/verify/[token]/route.ts - GET endpoint. Looks up verification by token. Returns verification details if found (challenge title, user name, completion date, status). Returns 404 if not found.",
+    "Run npm run build to verify everything compiles"
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds",
+    "Strava OAuth flow endpoints exist: /api/strava/connect, /api/strava/callback, /api/strava/activities",
+    "Strava dashboard page at /dashboard/strava displays connection UI",
+    "Challenges page at /dashboard/challenges shows challenges with progress",
+    "Challenge creation form at /dashboard/challenges/create works",
+    "Verification page at /verify/[token] shows green (valid) or red (invalid) status",
+    "QR codes are generated on the verifications page",
+    "API endpoints: GET/POST /api/challenges, POST /api/challenges/[id]/verify, GET /api/challenges/[id]/progress, GET /api/verifications, GET /api/verify/[token]"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/VItaVerse && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

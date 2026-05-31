@@ -1,0 +1,24 @@
+{
+  "project_type": "Next.js 16 full-stack web application (App Router)",
+  "language": "TypeScript",
+  "build_system": "npm with next build. Next.js 16.2.6, React 19.2.4, Tailwind CSS v4 with @tailwindcss/postcss",
+  "test_framework": "None configured yet - will use next build for type checking",
+  "build_command": "cd /projects/sandbox/VItaVerse && npm run build",
+  "test_command": "cd /projects/sandbox/VItaVerse && npm run build",
+  "verification_instructions": "1. Run npm install to install dependencies. 2. Run npm run build to verify TypeScript compiles and pages build. 3. Optionally run npm run dev to test locally.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/VItaVerse && npm install",
+  "environment_constraints": "OPEN_INTERNET network mode - can install any npm packages. Node.js v22 available. No external database - use file-based JSON storage in data/ directory.",
+  "contribution_requirements": "AGENTS.md says to read node_modules/next/dist/docs/ for Next.js API changes before writing code. Next.js 16 may have breaking changes from training data.",
+  "key_patterns": "App Router with src/app directory. Tailwind CSS v4 using @import 'tailwindcss' in globals.css with @theme inline block. Path alias @/* maps to ./src/*. PostCSS config uses @tailwindcss/postcss plugin. Layout uses Geist fonts.",
+  "relevant_files": [
+    "src/app/layout.tsx",
+    "src/app/page.tsx",
+    "src/app/globals.css",
+    "package.json",
+    "next.config.ts",
+    "tsconfig.json",
+    "postcss.config.mjs"
+  ],
+  "directory_structure": "src/app/ - App Router pages and layouts. public/ - static assets. Root has config files (tsconfig, next.config, eslint, postcss)."
+}
