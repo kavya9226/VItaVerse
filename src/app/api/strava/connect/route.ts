@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
   if (!token?.email) {
-    return NextResponse.redirect(new URL("/login", process.env.NEXTAUTH_URL || "http://localhost:3000"));
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const email = token.email as string;
@@ -13,9 +13,6 @@ export async function GET(request: NextRequest) {
 
   const csrf = crypto.randomUUID();
 
-  // Encode both the CSRF token and user email into the state parameter.
-  // This allows the callback to identify the user even if the session cookie
-  // is not available after the cross-origin redirect from Strava.
   const state = Buffer.from(
     JSON.stringify({ csrf, email })
   ).toString("base64url");
@@ -31,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   const stravaAuthUrl = `https://www.strava.com/oauth/authorize?${params.toString()}`;
 
-  const response = NextResponse.redirect(stravaAuthUrl);
+  const response = NextResponse.json({ url: stravaAuthUrl });
   response.cookies.set("strava_oauth_state", csrf, {
     httpOnly: true,
     sameSite: "lax",

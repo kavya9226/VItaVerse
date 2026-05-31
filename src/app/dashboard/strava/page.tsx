@@ -170,12 +170,24 @@ function StravaContent() {
             Link your Strava account to automatically track your activities and
             progress towards challenges.
           </p>
-          <a
-            href="/api/strava/connect"
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/strava/connect", { method: "POST" });
+                if (res.ok) {
+                  const data = await res.json();
+                  window.location.href = data.url;
+                } else {
+                  setError("Failed to initiate Strava connection");
+                }
+              } catch {
+                setError("Failed to initiate Strava connection");
+              }
+            }}
             className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-6 py-3 text-white font-medium hover:bg-orange-700 transition-colors"
           >
             Connect with Strava
-          </a>
+          </button>
         </div>
       ) : (
         <div>
