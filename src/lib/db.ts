@@ -9,6 +9,9 @@ export interface User {
   name: string;
   password: string;
   phone?: string;
+  phoneVerified?: boolean;
+  otp?: string;
+  otpExpiry?: string;
   stravaId?: string;
   createdAt: string;
 }
