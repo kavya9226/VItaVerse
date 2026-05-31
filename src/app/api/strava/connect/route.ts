@@ -9,11 +9,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     email = body.email;
-  } catch {
+    console.log("[Strava Connect] Received email:", email);
+  } catch (err) {
+    console.log("[Strava Connect] Failed to parse body:", err);
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
   if (!email || !getUser(email)) {
+    console.log("[Strava Connect] User not found for email:", email);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
