@@ -1,31 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getUser, updateUser } from "@/lib/db";
-
-async function refreshStravaToken(refreshToken: string): Promise<{
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
-} | null> {
-  try {
-    const response = await fetch("https://www.strava.com/oauth/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        client_id: process.env.STRAVA_CLIENT_ID,
-        client_secret: process.env.STRAVA_CLIENT_SECRET,
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-      }),
-    });
-
-    if (!response.ok) return null;
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
+import { getUser } from "@/lib/db";
+import { getValidAccessToken } from "@/lib/strava";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -38,25 +15,9 @@ export async function GET() {
     return NextResponse.json({ error: "Strava not connected" }, { status: 401 });
   }
 
-  let accessToken = user.stravaAccessToken;
-
-  // Check if token is expired
-  if (user.stravaTokenExpiry && new Date(user.stravaTokenExpiry) < new Date()) {
-    if (!user.stravaRefreshToken) {
-      return NextResponse.json({ error: "Strava token expired, no refresh token" }, { status: 401 });
-    }
-
-    const refreshed = await refreshStravaToken(user.stravaRefreshToken);
-    if (!refreshed) {
-      return NextResponse.json({ error: "Failed to refresh Strava token" }, { status: 401 });
-    }
-
-    accessToken = refreshed.access_token;
-    updateUser(session.user.email, {
-      stravaAccessToken: refreshed.access_token,
-      stravaRefreshToken: refreshed.refresh_token,
-      stravaTokenExpiry: new Date(refreshed.expires_at * 1000).toISOString(),
-    });
+  const accessToken = await getValidAccessToken(session.user.email);
+  if (!accessToken) {
+    return NextResponse.json({ error: "Failed to refresh Strava token" }, { status: 401 });
   }
 
   try {

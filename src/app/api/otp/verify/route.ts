@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getUser, updateUser } from "@/lib/db";
 
+const MAX_OTP_ATTEMPTS = 5;
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -35,6 +37,8 @@ export async function POST(request: Request) {
       updateUser(session.user.email, {
         otp: undefined,
         otpExpiry: undefined,
+        otpPhone: undefined,
+        otpAttempts: undefined,
       });
       return NextResponse.json(
         { error: "OTP has expired. Please request a new code." },
@@ -42,7 +46,33 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check brute-force attempts
+    const attempts = user.otpAttempts || 0;
+    if (attempts >= MAX_OTP_ATTEMPTS) {
+      updateUser(session.user.email, {
+        otp: undefined,
+        otpExpiry: undefined,
+        otpPhone: undefined,
+        otpAttempts: undefined,
+      });
+      return NextResponse.json(
+        { error: "Too many attempts, request a new code" },
+        { status: 429 }
+      );
+    }
+
+    // Check phone number matches what was sent
+    if (user.otpPhone && user.otpPhone !== phone) {
+      return NextResponse.json(
+        { error: "Phone number does not match the one the code was sent to" },
+        { status: 400 }
+      );
+    }
+
     if (user.otp !== otp) {
+      updateUser(session.user.email, {
+        otpAttempts: attempts + 1,
+      });
       return NextResponse.json({ error: "Invalid OTP code" }, { status: 400 });
     }
 
@@ -51,6 +81,8 @@ export async function POST(request: Request) {
       phoneVerified: true,
       otp: undefined,
       otpExpiry: undefined,
+      otpPhone: undefined,
+      otpAttempts: undefined,
     });
 
     return NextResponse.json({ message: "Phone verified" }, { status: 200 });

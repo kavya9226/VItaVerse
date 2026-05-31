@@ -27,7 +27,12 @@ export async function POST(request: Request) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-    updateUser(session.user.email, { otp, otpExpiry });
+    updateUser(session.user.email, {
+      otp,
+      otpExpiry,
+      otpPhone: phone,
+      otpAttempts: 0,
+    });
 
     console.log(`[OTP] Code for ${phone}: ${otp}`);
 

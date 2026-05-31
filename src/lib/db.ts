@@ -12,6 +12,8 @@ export interface User {
   phoneVerified?: boolean;
   otp?: string;
   otpExpiry?: string;
+  otpPhone?: string;
+  otpAttempts?: number;
   stravaId?: string;
   stravaAccessToken?: string;
   stravaRefreshToken?: string;

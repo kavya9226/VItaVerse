@@ -11,15 +11,26 @@ export async function GET() {
   const clientId = process.env.STRAVA_CLIENT_ID;
   const redirectUri = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/strava/callback`;
 
+  const state = crypto.randomUUID();
+
   const params = new URLSearchParams({
     client_id: clientId || "",
     redirect_uri: redirectUri,
     response_type: "code",
     scope: "read,activity:read_all",
     approval_prompt: "auto",
+    state,
   });
 
   const stravaAuthUrl = `https://www.strava.com/oauth/authorize?${params.toString()}`;
 
-  return NextResponse.redirect(stravaAuthUrl);
+  const response = NextResponse.redirect(stravaAuthUrl);
+  response.cookies.set("strava_oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 600,
+  });
+
+  return response;
 }

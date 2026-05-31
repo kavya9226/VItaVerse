@@ -11,6 +11,15 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const state = searchParams.get("state");
+
+  // Validate state parameter for CSRF protection
+  const storedState = request.cookies.get("strava_oauth_state")?.value;
+  if (!state || !storedState || state !== storedState) {
+    return NextResponse.redirect(
+      new URL("/dashboard/strava?error=invalid_state", process.env.NEXTAUTH_URL || "http://localhost:3000")
+    );
+  }
 
   if (!code) {
     return NextResponse.redirect(
@@ -47,9 +56,19 @@ export async function GET(request: NextRequest) {
       stravaId: String(athlete?.id || ""),
     });
 
-    return NextResponse.redirect(
+    const response = NextResponse.redirect(
       new URL("/dashboard/strava?connected=true", process.env.NEXTAUTH_URL || "http://localhost:3000")
     );
+
+    // Delete the state cookie after successful validation
+    response.cookies.set("strava_oauth_state", "", {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+
+    return response;
   } catch {
     return NextResponse.redirect(
       new URL("/dashboard/strava?error=connection_failed", process.env.NEXTAUTH_URL || "http://localhost:3000")
