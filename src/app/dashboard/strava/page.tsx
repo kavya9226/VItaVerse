@@ -44,6 +44,32 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function formatTotalDistance(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  return `${km.toFixed(1)} km`;
+}
+
+function formatTotalDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours < 24) return `${hours}h ${mins}m`;
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return `${days}d ${remainingHours}h ${mins}m`;
+}
+
+function getActivityBreakdown(activities: Activity[]): string {
+  const counts: Record<string, number> = {};
+  for (const a of activities) {
+    counts[a.type] = (counts[a.type] || 0) + 1;
+  }
+  const parts = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([type, count]) => `${count} ${count === 1 ? type : type + "s"}`);
+  return parts.join(", ");
+}
+
 function StravaContent() {
   const searchParams = useSearchParams();
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -174,49 +200,87 @@ function StravaContent() {
 
           {activities.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
-              <p className="text-gray-500">No activities found.</p>
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">No Data</h3>
+              <p className="text-gray-500">
+                No activity data found for the past 30 days. Start recording
+                activities on Strava and they will appear here.
+              </p>
             </div>
           ) : (
-            <div className="grid gap-4">
-              {activities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">
-                        {getActivityEmoji(activity.type)}
-                      </span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {activity.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">{activity.type}</p>
+            <div>
+              <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Total Activities</p>
+                  <p className="text-2xl font-bold text-gray-900">{activities.length}</p>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Total Distance</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {formatTotalDistance(activities.reduce((sum, a) => sum + a.distance, 0))}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Total Duration</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {formatTotalDuration(activities.reduce((sum, a) => sum + a.duration, 0))}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-sm text-gray-500">Activity Types</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {getActivityBreakdown(activities)}
+                  </p>
+                </div>
+              </div>
+
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Past 30 Days</h2>
+
+              <div className="grid gap-4">
+                {activities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">
+                          {getActivityEmoji(activity.type)}
+                        </span>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {activity.name}
+                          </h3>
+                          <p className="text-sm text-gray-500">{activity.type}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">
+                          {formatDate(activity.date)}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">
-                        {formatDate(activity.date)}
-                      </p>
+                    <div className="mt-3 flex items-center gap-6 text-sm">
+                      <div>
+                        <span className="text-gray-500">Distance: </span>
+                        <span className="font-medium text-gray-900">
+                          {activity.distance} km
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Duration: </span>
+                        <span className="font-medium text-gray-900">
+                          {formatDuration(activity.duration)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-6 text-sm">
-                    <div>
-                      <span className="text-gray-500">Distance: </span>
-                      <span className="font-medium text-gray-900">
-                        {activity.distance} km
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Duration: </span>
-                      <span className="font-medium text-gray-900">
-                        {formatDuration(activity.duration)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
