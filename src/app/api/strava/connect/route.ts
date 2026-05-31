@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { getUser } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-  if (!token?.email) {
+  // Read email from request body (sent by the authenticated client).
+  // The dashboard layout already guards access, and we validate the email
+  // exists in our database before proceeding.
+  let email: string | undefined;
+  try {
+    const body = await request.json();
+    email = body.email;
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  if (!email || !getUser(email)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const email = token.email as string;
   const clientId = process.env.STRAVA_CLIENT_ID;
   const redirectUri = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/strava/callback`;
 

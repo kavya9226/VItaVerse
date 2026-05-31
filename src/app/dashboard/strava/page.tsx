@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface Activity {
   id: number;
@@ -72,6 +73,7 @@ function getActivityBreakdown(activities: Activity[]): string {
 
 function StravaContent() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -82,8 +84,9 @@ function StravaContent() {
 
   useEffect(() => {
     async function fetchActivities() {
+      if (!session?.user?.email) return;
       try {
-        const res = await fetch("/api/strava/activities");
+        const res = await fetch(`/api/strava/activities?email=${encodeURIComponent(session.user.email)}`);
         if (res.status === 401) {
           setConnected(false);
           setLoading(false);
@@ -105,7 +108,7 @@ function StravaContent() {
       }
     }
     fetchActivities();
-  }, []);
+  }, [session]);
 
   if (loading) {
     return (
@@ -173,7 +176,11 @@ function StravaContent() {
           <button
             onClick={async () => {
               try {
-                const res = await fetch("/api/strava/connect", { method: "POST" });
+                const res = await fetch("/api/strava/connect", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email: session?.user?.email }),
+                });
                 if (res.ok) {
                   const data = await res.json();
                   window.location.href = data.url;

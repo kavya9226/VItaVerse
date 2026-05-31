@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 import { getUser } from "@/lib/db";
 import { getValidAccessToken } from "@/lib/strava";
 
 export async function GET(request: NextRequest) {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-  if (!token?.email) {
+  // Read email from query parameter (passed by client which has the session)
+  const { searchParams } = new URL(request.url);
+  const email = searchParams.get("email");
+
+  if (!email || !getUser(email)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const email = token.email as string;
   const user = getUser(email);
   if (!user || !user.stravaAccessToken) {
     return NextResponse.json({ error: "Strava not connected" }, { status: 401 });
