@@ -11,7 +11,14 @@ export async function GET() {
   const clientId = process.env.STRAVA_CLIENT_ID;
   const redirectUri = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/strava/callback`;
 
-  const state = crypto.randomUUID();
+  const csrf = crypto.randomUUID();
+
+  // Encode both the CSRF token and user email into the state parameter.
+  // This allows the callback to identify the user even if the session cookie
+  // is not available after the cross-origin redirect from Strava.
+  const state = Buffer.from(
+    JSON.stringify({ csrf, email: session.user.email })
+  ).toString("base64url");
 
   const params = new URLSearchParams({
     client_id: clientId || "",
@@ -25,9 +32,10 @@ export async function GET() {
   const stravaAuthUrl = `https://www.strava.com/oauth/authorize?${params.toString()}`;
 
   const response = NextResponse.redirect(stravaAuthUrl);
-  response.cookies.set("strava_oauth_state", state, {
+  response.cookies.set("strava_oauth_state", csrf, {
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 600,
   });

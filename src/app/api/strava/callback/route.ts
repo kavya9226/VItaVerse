@@ -1,23 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { updateUser } from "@/lib/db";
+import { getUser, updateUser } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.redirect(new URL("/login", process.env.NEXTAUTH_URL || "http://localhost:3000"));
-  }
-
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
 
-  // Validate state parameter for CSRF protection
+  // Decode the state parameter to extract CSRF token and user email
+  let stateData: { csrf?: string; email?: string } = {};
+  if (state) {
+    try {
+      stateData = JSON.parse(
+        Buffer.from(state, "base64url").toString("utf-8")
+      );
+    } catch {
+      return NextResponse.redirect(
+        new URL("/dashboard/strava?error=invalid_state", process.env.NEXTAUTH_URL || "http://localhost:3000")
+      );
+    }
+  }
+
+  // Validate CSRF token from state against the cookie
   const storedState = request.cookies.get("strava_oauth_state")?.value;
-  if (!state || !storedState || state !== storedState) {
+  if (!stateData.csrf || !storedState || stateData.csrf !== storedState) {
     return NextResponse.redirect(
       new URL("/dashboard/strava?error=invalid_state", process.env.NEXTAUTH_URL || "http://localhost:3000")
+    );
+  }
+
+  // Determine user email: try session first, fall back to state parameter
+  let userEmail: string | undefined;
+
+  const session = await getServerSession(authOptions);
+  if (session?.user?.email) {
+    userEmail = session.user.email;
+  } else if (stateData.email) {
+    // Session cookie was lost during cross-origin redirect from Strava.
+    // Fall back to the email encoded in the state parameter (already CSRF-validated).
+    const user = getUser(stateData.email);
+    if (user) {
+      userEmail = stateData.email;
+    }
+  }
+
+  if (!userEmail) {
+    return NextResponse.redirect(
+      new URL("/login", process.env.NEXTAUTH_URL || "http://localhost:3000")
     );
   }
 
@@ -48,7 +78,7 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
     const { access_token, refresh_token, expires_at, athlete } = tokenData;
 
-    updateUser(session.user.email, {
+    updateUser(userEmail, {
       stravaAccessToken: access_token,
       stravaRefreshToken: refresh_token,
       stravaTokenExpiry: new Date(expires_at * 1000).toISOString(),
@@ -64,6 +94,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set("strava_oauth_state", "", {
       httpOnly: true,
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 0,
     });
