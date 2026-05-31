@@ -9,7 +9,16 @@ export interface User {
   name: string;
   password: string;
   phone?: string;
+  phoneVerified?: boolean;
+  otp?: string;
+  otpExpiry?: string;
+  otpPhone?: string;
+  otpAttempts?: number;
   stravaId?: string;
+  stravaAccessToken?: string;
+  stravaRefreshToken?: string;
+  stravaTokenExpiry?: string;
+  stravaAthleteId?: number;
   createdAt: string;
 }
 
@@ -18,6 +27,9 @@ export interface Challenge {
   title: string;
   description: string;
   targetDistance: number;
+  activityType: "Run" | "Ride" | "Walk" | "Any";
+  startDate: string;
+  endDate: string;
   createdBy: string;
   createdAt: string;
 }
@@ -26,7 +38,10 @@ export interface Verification {
   id: string;
   userId: string;
   challengeId: string;
+  token: string;
   status: "pending" | "verified" | "failed";
+  distanceAchieved?: number;
+  completedAt?: string;
   qrCode?: string;
   verifiedAt?: string;
   createdAt: string;
